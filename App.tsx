@@ -14,6 +14,14 @@ type Tab = "home" | "chat" | "learn" | "settings";
 type ChatMessage = { id: string; role: "user" | "assistant"; text: string };
 const CHAT_STORAGE_KEY = "aeron.chat.v1";
 const LANGUAGE_STORAGE_KEY = "aeron.language.v1";
+const quizQuestions = [
+  { question: "وش معنى Merhaba؟", options: ["مع السلامة", "مرحباً", "شكراً"], answer: 1, explanation: "Merhaba تعني مرحباً." },
+  { question: "كيف تقول شكراً بالتركي؟", options: ["Teşekkür ederim", "Lütfen", "Görüşürüz"], answer: 0, explanation: "Teşekkür ederim تعني شكراً لك." },
+  { question: "وش معنى Nasılsın؟", options: ["أين أنت؟", "كم عمرك؟", "كيف حالك؟"], answer: 2, explanation: "Nasılsın تعني كيف حالك؟" },
+  { question: "وش معنى Lütfen؟", options: ["من فضلك", "صباح الخير", "لا أفهم"], answer: 0, explanation: "Lütfen تعني من فضلك." },
+  { question: "كيف تقول أراك لاحقاً؟", options: ["Merhaba", "Görüşürüz", "Anlamadım"], answer: 1, explanation: "Görüşürüz تعني أراك لاحقاً." }
+];
+
 
 const words = [
   { tr: "Merhaba", ar: "مرحباً", en: "Hello" },
@@ -32,6 +40,10 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const [quizIndex, setQuizIndex] = useState(0);
+  const [quizScore, setQuizScore] = useState(0);
+  const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
+
   const t = useMemo(() => translations[language], [language]);
   const rtl = language === "ar";
 
@@ -172,6 +184,47 @@ export default function App() {
             <Text style={styles.wordTr}>{word.tr}</Text>
             <Text style={styles.wordMeaning}>{language === "en" ? word.en : word.ar}</Text>
           </View>)}
+          <View style={styles.quizCard}>
+            <Text style={styles.quizTitle}>اختبر نفسك</Text>
+            <Text style={styles.quizProgress}>السؤال {quizIndex + 1} من {quizQuestions.length} · نتيجتك {quizScore{'}'}</Text>
+            <Text style={styles.quizQuestion}>{quizQuestions[quizIndex].question}</Text>
+            {quizQuestions[quizIndex].options.map((option, index) => {
+              const chosen = quizAnswer === index;
+              const correct = quizQuestions[quizIndex].answer === index;
+              return <Pressable
+                key={option}
+                disabled={quizAnswer !== null}
+                onPress={() => {
+                  setQuizAnswer(index);
+                  if (correct) setQuizScore((score) => score + 1);
+                }}
+                style={[
+                  styles.quizOption,
+                  quizAnswer !== null && correct && styles.quizCorrect,
+                  chosen && !correct && styles.quizWrong
+                ]}
+              >
+                <Text style={styles.quizOptionText}>{option}</Text>
+              </Pressable>;
+            })}
+            {quizAnswer !== null && <>
+              <Text style={styles.quizExplanation}>
+                {quizAnswer === quizQuestions[quizIndex].answer ? "إجابة صحيحة! " : "مو صحيح. "}
+                {quizQuestions[quizIndex].explanation}
+              </Text>
+              <Pressable style={styles.quizNext} onPress={() => {
+                if (quizIndex === quizQuestions.length - 1) {
+                  setQuizIndex(0);
+                  setQuizScore(0);
+                } else {
+                  setQuizIndex((index) => index + 1);
+                }
+                setQuizAnswer(null);
+              }}>
+                <Text style={styles.quizNextText}>{quizIndex === quizQuestions.length - 1 ? "إعادة الاختبار" : "السؤال التالي"}</Text>
+              </Pressable>
+            </>}
+          </View>
         </ScrollView>}
 
         {tab === "settings" && <View style={styles.panel}>
@@ -240,5 +293,16 @@ const styles = StyleSheet.create({
   languageSelected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   languageText: { color: colors.muted, fontWeight: "700" },
   languageTextSelected: { color: colors.primary },
-  note: { color: colors.muted, marginTop: 25, lineHeight: 21 }
+  note: { color: colors.muted, marginTop: 25, lineHeight: 21 },
+  quizCard: { backgroundColor: colors.surfaceRaised, borderColor: colors.border, borderWidth: 1, borderRadius: 16, padding: 16, marginTop: 12, marginBottom: 20 },
+  quizTitle: { color: colors.text, fontSize: 18, fontWeight: "800", marginBottom: 7 },
+  quizProgress: { color: colors.muted, fontSize: 11, marginBottom: 14 },
+  quizQuestion: { color: colors.text, fontSize: 16, fontWeight: "700", marginBottom: 12 },
+  quizOption: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 11, padding: 13, marginBottom: 8 },
+  quizCorrect: { borderColor: colors.success, backgroundColor: "#17372F" },
+  quizWrong: { borderColor: colors.danger, backgroundColor: "#3A2028" },
+  quizOptionText: { color: colors.text, fontSize: 14 },
+  quizExplanation: { color: colors.muted, fontSize: 12, lineHeight: 19, marginTop: 8 },
+  quizNext: { backgroundColor: colors.primary, borderRadius: 11, padding: 13, alignItems: "center", marginTop: 12 },
+  quizNextText: { color: colors.background, fontWeight: "800" }
 });
