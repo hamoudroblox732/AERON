@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
+import * as Speech from "expo-speech";
 import { Orb } from "./src/components/Orb";
 import { Language, translations } from "./src/i18n";
 import { colors, spacing } from "./src/theme";
@@ -43,6 +44,7 @@ export default function App() {
   const [quizIndex, setQuizIndex] = useState(0);
   const [quizScore, setQuizScore] = useState(0);
   const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
 
   const t = useMemo(() => translations[language], [language]);
   const rtl = language === "ar";
@@ -85,6 +87,20 @@ export default function App() {
   useEffect(() => {
     if (loaded) AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, language).catch(() => {});
   }, [language, loaded]);
+
+  const speakText = (text: string, id: string, lang: Language = language) => {
+    Speech.stop();
+    setSpeakingId(id);
+    Speech.speak(text, {
+      language: lang === "tr" ? "tr-TR" : lang === "en" ? "en-US" : "ar-SA",
+      rate: 0.9,
+      onDone: () => setSpeakingId(null),
+      onStopped: () => setSpeakingId(null),
+      onError: () => setSpeakingId(null)
+    });
+  };
+
+  const stopSpeech = () => { Speech.stop(); setSpeakingId(null); };
 
   const sendMessage = async () => {
     const clean = message.trim();
@@ -165,6 +181,7 @@ export default function App() {
             {messages.map((item) => <View key={item.id} style={[styles.messageBubble, item.role === "assistant" ? styles.assistantBubble : styles.userBubble]}>
               <Text style={styles.messageRole}>{item.role === "assistant" ? "aeron" : "YOU"}</Text>
               <Text style={styles.messageText}>{item.text}</Text>
+              {item.role === "assistant" && <Pressable style={styles.speakButton} onPress={() => speakingId === item.id ? stopSpeech() : speakText(item.text, item.id)}><Text style={styles.speakText}>{speakingId === item.id ? "إيقاف الصوت" : "▶ استمع"}</Text></Pressable>}
             </View>)}
             {busy && <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={styles.loadingText}>aeron يفكر...</Text></View>}
           </ScrollView>
@@ -183,6 +200,7 @@ export default function App() {
           {words.map((word) => <View key={word.tr} style={styles.wordCard}>
             <Text style={styles.wordTr}>{word.tr}</Text>
             <Text style={styles.wordMeaning}>{language === "en" ? word.en : word.ar}</Text>
+            <Pressable style={styles.speakButton} onPress={() => speakText(word.tr, word.tr, "tr")}><Text style={styles.speakText}>▶ استمع للنطق التركي</Text></Pressable>
           </View>)}
           <View style={styles.quizCard}>
             <Text style={styles.quizTitle}>اختبر نفسك</Text>
@@ -288,6 +306,8 @@ const styles = StyleSheet.create({
   wordCard: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 14, padding: 17, marginBottom: 10 },
   wordTr: { color: colors.primary, fontSize: 19, fontWeight: "700", marginBottom: 5 },
   wordMeaning: { color: colors.text, fontSize: 14 },
+  speakButton: { alignSelf: "flex-start", marginTop: 9, backgroundColor: colors.primarySoft, borderRadius: 9, paddingHorizontal: 11, paddingVertical: 8 },
+  speakText: { color: colors.primary, fontSize: 11, fontWeight: "700" },
   languageRow: { flexDirection: "row", gap: 10, marginTop: 15 },
   languageButton: { flex: 1, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, padding: 15, borderRadius: 13, alignItems: "center" },
   languageSelected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
