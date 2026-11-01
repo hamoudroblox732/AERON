@@ -1,31 +1,57 @@
 import React, { useMemo, useState } from "react";
-import { SafeAreaView, View, Text, StyleSheet, Pressable, TextInput, ScrollView } from "react-native";
+import {
+  SafeAreaView, View, Text, StyleSheet, Pressable, TextInput,
+  ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform
+} from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Orb } from "./src/components/Orb";
 import { Language, translations } from "./src/i18n";
 import { colors, spacing } from "./src/theme";
+import { askAeron, isAeronConfigured } from "./src/ai";
 
 type Tab = "home" | "chat" | "learn" | "settings";
+type ChatMessage = { id: string; role: "user" | "assistant"; text: string };
+
 const words = [
   { tr: "Merhaba", ar: "مرحباً", en: "Hello" },
   { tr: "Nasılsın?", ar: "كيف حالك؟", en: "How are you?" },
   { tr: "Teşekkür ederim", ar: "شكراً لك", en: "Thank you" },
-  { tr: "Görüşürüz", ar: "أراك لاحقاً", en: "See you" }
+  { tr: "Görüşürüz", ar: "أراك لاحقاً", en: "See you" },
+  { tr: "Lütfen", ar: "من فضلك", en: "Please" },
+  { tr: "Anlamadım", ar: "لم أفهم", en: "I didn't understand" }
 ];
 
 export default function App() {
   const [language, setLanguage] = useState<Language>("ar");
   const [tab, setTab] = useState<Tab>("home");
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const t = useMemo(() => translations[language], [language]);
   const rtl = language === "ar";
-  const sendMessage = () => {
+
+  const sendMessage = async () => {
     const clean = message.trim();
-    if (!clean) return;
-    setMessages((current) => [...current, clean]);
+    if (!clean || busy) return;
+    const userMessage: ChatMessage = { id: String(Date.now()), role: "user", text: clean };
+    const next = [...messages, userMessage];
+    setMessages(next);
     setMessage("");
+    setError("");
+    setBusy(true);
+    try {
+      const reply = await askAeron(next, language);
+      setMessages((current) => [...current, {
+        id: String(Date.now() + 1), role: "assistant", text: reply
+      }]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "صار خطأ غير متوقع. حاول مرة ثانية.");
+    } finally {
+      setBusy(false);
+    }
   };
+
   const tabs: { id: Tab; label: string }[] = [
     { id: "home", label: t.home }, { id: "chat", label: t.chat },
     { id: "learn", label: t.learn }, { id: "settings", label: t.settings }
@@ -44,33 +70,60 @@ export default function App() {
             <Text style={[styles.navText, tab === item.id && styles.navTextActive]}>{item.label}</Text>
           </Pressable>)}
         </View>
+
         {tab === "home" && <ScrollView contentContainerStyle={styles.home}>
           <Text style={[styles.title, rtl && styles.rtl]}>{t.greeting}</Text>
           <Text style={[styles.subtitle, rtl && styles.rtl]}>{t.subtitle}</Text>
           <Orb label={t.assistantReady.toUpperCase()} />
           <Text style={[styles.sectionTitle, rtl && styles.rtl]}>{t.prompt}</Text>
-          <Pressable style={styles.actionCard} onPress={() => setTab("chat")}><Text style={styles.actionTitle}>{t.chat}</Text><Text style={styles.actionDesc}>{t.comingSoon}</Text></Pressable>
-          <Pressable style={styles.actionCard} onPress={() => setTab("learn")}><Text style={styles.actionTitle}>{t.learn}</Text><Text style={styles.actionDesc}>Merhaba · Nasılsın? · Teşekkürler</Text></Pressable>
+          <Pressable style={styles.actionCard} onPress={() => setTab("chat")}>
+            <Text style={styles.actionTitle}>{t.chat}</Text>
+            <Text style={styles.actionDesc}>{isAeronConfigured() ? "ابدأ محادثة مع AERON" : "المحادثة الذكية تحتاج إعداد الخادم أولاً"}</Text>
+          </Pressable>
+          <Pressable style={styles.actionCard} onPress={() => setTab("learn")}>
+            <Text style={styles.actionTitle}>{t.learn}</Text>
+            <Text style={styles.actionDesc}>Merhaba · Nasılsın? · Teşekkürler</Text>
+          </Pressable>
         </ScrollView>}
-        {tab === "chat" && <View style={styles.panel}>
+
+        {tab === "chat" && <KeyboardAvoidingView style={styles.panel} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <Text style={[styles.title, rtl && styles.rtl]}>{t.chat}</Text>
-          <Text style={[styles.subtitle, rtl && styles.rtl]}>{t.comingSoon}</Text>
-          <ScrollView style={styles.messages}>{messages.map((item, index) => <View key={index} style={styles.messageBubble}><Text style={styles.messageText}>{item}</Text></View>)}</ScrollView>
+          <Text style={[styles.subtitle, rtl && styles.rtl]}>{isAeronConfigured() ? "AERON جاهز للمحادثة." : "اربط Supabase وخدمة الذكاء الاصطناعي لتفعيل الردود."}</Text>
+          <ScrollView style={styles.messages} contentContainerStyle={styles.messageList}>
+            {messages.length === 0 && <Text style={styles.empty}>اكتب سؤالك وابدأ أول محادثة مع AERON.</Text>}
+            {messages.map((item) => <View key={item.id} style={[styles.messageBubble, item.role === "assistant" ? styles.assistantBubble : styles.userBubble]}>
+              <Text style={styles.messageRole}>{item.role === "assistant" ? "AERON" : "YOU"}</Text>
+              <Text style={styles.messageText}>{item.text}</Text>
+            </View>)}
+            {busy && <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={styles.loadingText}>AERON يفكر...</Text></View>}
+          </ScrollView>
+          {!!error && <Text style={styles.error}>{error}</Text>}
           <View style={styles.composer}>
-            <TextInput value={message} onChangeText={setMessage} placeholder={t.typeMessage} placeholderTextColor={colors.muted} style={[styles.input, rtl && styles.rtl]} />
-            <Pressable onPress={sendMessage} style={styles.send}><Text style={styles.sendText}>{t.send}</Text></Pressable>
+            <TextInput value={message} onChangeText={setMessage} placeholder={t.typeMessage} placeholderTextColor={colors.muted} style={[styles.input, rtl && styles.rtl]} multiline />
+            <Pressable onPress={sendMessage} disabled={busy || !message.trim()} style={[styles.send, (busy || !message.trim()) && styles.sendDisabled]}>
+              <Text style={styles.sendText}>{busy ? "..." : t.send}</Text>
+            </Pressable>
           </View>
-        </View>}
+        </KeyboardAvoidingView>}
+
         {tab === "learn" && <ScrollView contentContainerStyle={styles.panel}>
           <Text style={[styles.title, rtl && styles.rtl]}>{t.lessonTitle}</Text>
           <Text style={[styles.subtitle, rtl && styles.rtl]}>{t.lessonHint}</Text>
-          {words.map((word) => <View key={word.tr} style={styles.wordCard}><Text style={styles.wordTr}>{word.tr}</Text><Text style={styles.wordMeaning}>{language === "en" ? word.en : word.ar}</Text></View>)}
+          {words.map((word) => <View key={word.tr} style={styles.wordCard}>
+            <Text style={styles.wordTr}>{word.tr}</Text>
+            <Text style={styles.wordMeaning}>{language === "en" ? word.en : word.ar}</Text>
+          </View>)}
         </ScrollView>}
+
         {tab === "settings" && <View style={styles.panel}>
           <Text style={[styles.title, rtl && styles.rtl]}>{t.settings}</Text>
           <Text style={[styles.subtitle, rtl && styles.rtl]}>{t.language}</Text>
-          <View style={styles.languageRow}>{(["ar", "en", "tr"] as Language[]).map((item) => <Pressable key={item} onPress={() => setLanguage(item)} style={[styles.languageButton, language === item && styles.languageSelected]}><Text style={[styles.languageText, language === item && styles.languageTextSelected]}>{item.toUpperCase()}</Text></Pressable>)}</View>
-          <Text style={styles.note}>{t.comingSoon}</Text>
+          <View style={styles.languageRow}>
+            {(["ar", "en", "tr"] as Language[]).map((item) => <Pressable key={item} onPress={() => setLanguage(item)} style={[styles.languageButton, language === item && styles.languageSelected]}>
+              <Text style={[styles.languageText, language === item && styles.languageTextSelected]}>{item.toUpperCase()}</Text>
+            </Pressable>)}
+          </View>
+          <Text style={styles.note}>المحادثات حالياً غير محفوظة بعد إغلاق التطبيق. سنضيف الذاكرة والحفظ لاحقاً.</Text>
         </View>}
       </View>
     </SafeAreaView>
@@ -101,11 +154,20 @@ const styles = StyleSheet.create({
   actionDesc: { color: colors.muted, fontSize: 12, lineHeight: 18 },
   panel: { flex: 1, paddingTop: 26, paddingBottom: 18 },
   messages: { flex: 1, marginVertical: 12 },
-  messageBubble: { alignSelf: "flex-end", maxWidth: "85%", backgroundColor: colors.primarySoft, borderRadius: 14, padding: 12, marginBottom: 8 },
-  messageText: { color: colors.text, fontSize: 14 },
+  messageList: { paddingBottom: 10 },
+  empty: { color: colors.muted, textAlign: "center", marginTop: 40, lineHeight: 22 },
+  messageBubble: { maxWidth: "88%", borderRadius: 14, padding: 12, marginBottom: 10 },
+  assistantBubble: { alignSelf: "flex-start", backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  userBubble: { alignSelf: "flex-end", backgroundColor: colors.primarySoft },
+  messageRole: { color: colors.primary, fontSize: 9, fontWeight: "800", letterSpacing: 1, marginBottom: 5 },
+  messageText: { color: colors.text, fontSize: 14, lineHeight: 21 },
+  loading: { flexDirection: "row", alignItems: "center", gap: 9, padding: 10 },
+  loadingText: { color: colors.muted, fontSize: 12 },
+  error: { color: colors.danger, fontSize: 12, marginBottom: 8 },
   composer: { flexDirection: "row", alignItems: "center", gap: 8 },
-  input: { flex: 1, backgroundColor: colors.surface, color: colors.text, borderRadius: 13, paddingHorizontal: 14, paddingVertical: 13, borderWidth: 1, borderColor: colors.border },
+  input: { flex: 1, maxHeight: 110, backgroundColor: colors.surface, color: colors.text, borderRadius: 13, paddingHorizontal: 14, paddingVertical: 13, borderWidth: 1, borderColor: colors.border },
   send: { backgroundColor: colors.primary, borderRadius: 13, paddingHorizontal: 15, paddingVertical: 14 },
+  sendDisabled: { opacity: 0.45 },
   sendText: { color: colors.background, fontWeight: "800", fontSize: 12 },
   wordCard: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 14, padding: 17, marginBottom: 10 },
   wordTr: { color: colors.primary, fontSize: 19, fontWeight: "700", marginBottom: 5 },
