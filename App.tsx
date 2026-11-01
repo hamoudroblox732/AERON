@@ -75,6 +75,7 @@ export default function App() {
           const quiz = JSON.parse(savedQuiz);
           if (Number.isInteger(quiz.index) && quiz.index >= 0 && quiz.index < quizQuestions.length) setQuizIndex(quiz.index);
           if (Number.isInteger(quiz.score) && quiz.score >= 0 && quiz.score <= quizQuestions.length) setQuizScore(quiz.score);
+          if (quiz.answer === null || (Number.isInteger(quiz.answer) && quiz.answer >= 0 && quiz.answer <= 2)) setQuizAnswer(quiz.answer);
         }
       } catch {
         if (active) setError("تعذر تحميل المحادثة المحفوظة.");
@@ -96,8 +97,8 @@ export default function App() {
   }, [language, loaded]);
 
   useEffect(() => {
-    if (loaded) AsyncStorage.setItem(QUIZ_STORAGE_KEY, JSON.stringify({ index: quizIndex, score: quizScore })).catch(() => {});
-  }, [quizIndex, quizScore, loaded]);
+    if (loaded) AsyncStorage.setItem(QUIZ_STORAGE_KEY, JSON.stringify({ index: quizIndex, score: quizScore, answer: quizAnswer })).catch(() => {});
+  }, [quizIndex, quizScore, quizAnswer, loaded]);
 
   useEffect(() => () => { Speech.stop(); }, []);
 
@@ -157,6 +158,16 @@ export default function App() {
     ]);
   };
 
+  const resetLearning = () => {
+    Alert.alert("إعادة ضبط التعلّم", "هل تبي تصفّر نتيجة الاختبار وترجع للسؤال الأول؟", [
+      { text: "إلغاء", style: "cancel" },
+      { text: "إعادة ضبط", style: "destructive", onPress: () => {
+        setQuizIndex(0);
+        setQuizScore(0);
+        setQuizAnswer(null);
+      }}
+    ]);
+  };
   const tabs: { id: Tab; label: string }[] = [
     { id: "home", label: t.home }, { id: "chat", label: t.chat },
     { id: "learn", label: t.learn }, { id: "settings", label: t.settings }
@@ -286,6 +297,8 @@ export default function App() {
             </Pressable>)}
           </View>
           <Text style={styles.note}>يحفظ aeron المحادثة واللغة على هذا الجهاز فقط. حذف التطبيق أو بياناته قد يحذف المحادثات.</Text>
+          <Pressable style={styles.resetButton} onPress={resetLearning}><Text style={styles.resetButtonText}>إعادة ضبط تقدّم تعلم التركية</Text></Pressable>
+          <Pressable style={styles.resetButton} onPress={stopSpeech}><Text style={styles.resetButtonText}>إيقاف أي صوت يعمل</Text></Pressable>
         </View>}
       </View>
     </SafeAreaView>
@@ -352,6 +365,8 @@ const styles = StyleSheet.create({
   languageText: { color: colors.muted, fontWeight: "700" },
   languageTextSelected: { color: colors.primary },
   note: { color: colors.muted, marginTop: 25, lineHeight: 21 },
+  resetButton: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 12, padding: 14, marginTop: 12 },
+  resetButtonText: { color: colors.primary, fontSize: 12, fontWeight: "700", textAlign: "center" },
   quizCard: { backgroundColor: colors.surfaceRaised, borderColor: colors.border, borderWidth: 1, borderRadius: 16, padding: 16, marginTop: 12, marginBottom: 20 },
   quizTitle: { color: colors.text, fontSize: 18, fontWeight: "800", marginBottom: 7 },
   quizProgress: { color: colors.muted, fontSize: 11, marginBottom: 14 },
