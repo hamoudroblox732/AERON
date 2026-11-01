@@ -1,28 +1,6 @@
 export type Language = "ar" | "en" | "tr";
-
 export const translations = {
-  ar: {
-    greeting: "أهلاً، أنا AERON", subtitle: "مساعدك الذكي، بلغتك وبطريقتك.",
-    prompt: "وش تبي نسوي اليوم؟", chat: "المحادثة", learn: "تعلم التركية",
-    settings: "الإعدادات", typeMessage: "اكتب رسالتك...", send: "إرسال",
-    comingSoon: "هذه الميزة بنوصلها في المرحلة القادمة.",
-    lessonTitle: "درس تركي سريع", lessonHint: "كلمات تركية ومعانيها",
-    language: "لغة التطبيق", home: "الرئيسية", assistantReady: "جاهز للمساعدة"
-  },
-  en: {
-    greeting: "Hello, I'm AERON", subtitle: "Your intelligent assistant, your way.",
-    prompt: "What shall we do today?", chat: "Chat", learn: "Learn Turkish",
-    settings: "Settings", typeMessage: "Type your message...", send: "Send",
-    comingSoon: "This feature will be connected in a later stage.",
-    lessonTitle: "Quick Turkish lesson", lessonHint: "Turkish words and meanings",
-    language: "App language", home: "Home", assistantReady: "Ready to help"
-  },
-  tr: {
-    greeting: "Merhaba, ben AERON", subtitle: "Akıllı yardımcın, senin tarzın.",
-    prompt: "Bugün ne yapalım?", chat: "Sohbet", learn: "Türkçe öğren",
-    settings: "Ayarlar", typeMessage: "Mesajını yaz...", send: "Gönder",
-    comingSoon: "Bu özellik sonraki aşamada eklenecek.",
-    lessonTitle: "Kısa Türkçe dersi", lessonHint: "Türkçe kelimeler ve anlamları",
-    language: "Uygulama dili", home: "Ana sayfa", assistantReady: "Yardım için hazır"
-  }
+ar:{greeting:"أهلاً، أنا AERON",subtitle:"مساعدك الذكي، بلغتك وبطريقتك.",prompt:"وش تبي نسوي اليوم؟",chat:"المحادثة",learn:"تعلم التركية",settings:"الإعدادات",typeMessage:"اكتب رسالتك...",send:"إرسال",comingSoon:"هذه الميزة بنوصلها في المرحلة القادمة.",lessonTitle:"درس تركي سريع",lessonHint:"كلمات تركية ومعانيها",language:"لغة التطبيق",home:"الرئيسية",assistantReady:"جاهز للمساعدة",clear:"مسح",chatReady:"aeron جاهز للمحادثة.",chatSetup:"يلزم إعداد اتصال Supabase.",emptyChat:"ابدأ محادثتك مع aeron، أو اختر اقتراحاً:",suggestions:["اشرح لي موضوعاً صعباً بطريقة بسيطة","علمني 5 كلمات تركية جديدة","ساعدني أرتب مهامي اليوم","اختبر معلوماتي بأسئلة قصيرة"],thinking:"aeron يفكر...",listen:"▶ استمع",stopAudio:"إيقاف الصوت",retry:"إعادة المحاولة",quizTitle:"اختبر نفسك",question:"السؤال",score:"نتيجتك",correct:"إجابة صحيحة! ",incorrect:"مو صحيح. ",next:"السؤال التالي",restartQuiz:"إعادة الاختبار",resetLearning:"إعادة ضبط تقدّم تعلم التركية",clearSavedChat:"مسح المحادثة المحفوظة",stopSound:"إيقاف أي صوت يعمل",storageNote:"يحفظ aeron المحادثة واللغة على هذا الجهاز فقط. حذف التطبيق أو بياناته قد يحذف المحادثات.",resetTitle:"إعادة ضبط التعلّم",resetMessage:"هل تبي تصفّر نتيجة الاختبار وترجع للسؤال الأول؟",cancel:"إلغاء",reset:"إعادة ضبط",clearTitle:"مسح المحادثة",clearMessage:"هل تبي تمسح كل رسائل AERON المحفوظة على هذا الجهاز؟",speechWord:"▶ استمع للنطق التركي",appInfo:"حول التطبيق",appDescription:"AERON مساعد شخصي متعدد اللغات.",version:"الإصدار",deviceStorage:"التخزين محلي على هذا الجهاز."},
+en:{greeting:"Hello, I'm AERON",subtitle:"Your intelligent assistant, your way.",prompt:"What shall we do today?",chat:"Chat",learn:"Learn Turkish",settings:"Settings",typeMessage:"Type your message...",send:"Send",comingSoon:"This feature will be connected in a later stage.",lessonTitle:"Quick Turkish lesson",lessonHint:"Turkish words and meanings",language:"App language",home:"Home",assistantReady:"Ready to help",clear:"Clear",chatReady:"AERON is ready to chat.",chatSetup:"Supabase connection needs configuration.",emptyChat:"Start chatting with AERON, or choose a suggestion:",suggestions:["Explain a difficult topic simply","Teach me 5 new Turkish words","Help me organize today's tasks","Quiz me with short questions"],thinking:"AERON is thinking...",listen:"▶ Listen",stopAudio:"Stop audio",retry:"Try again",quizTitle:"Test yourself",question:"Question",score:"Score",correct:"Correct! ",incorrect:"Not quite. ",next:"Next question",restartQuiz:"Restart quiz",resetLearning:"Reset Turkish learning progress",clearSavedChat:"Clear saved chat",stopSound:"Stop audio playback",storageNote:"AERON saves chat and language on this device only. Removing app data may delete saved conversations.",resetTitle:"Reset learning",resetMessage:"Reset your quiz score and return to the first question?",cancel:"Cancel",reset:"Reset",clearTitle:"Clear chat",clearMessage:"Delete all AERON messages saved on this device?",speechWord:"▶ Listen to Turkish pronunciation",appInfo:"About the app",appDescription:"AERON is a multilingual personal assistant.",version:"Version",deviceStorage:"Data is stored locally on this device."},
+tr:{greeting:"Merhaba, ben AERON",subtitle:"Akıllı yardımcın, senin tarzın.",prompt:"Bugün ne yapalım?",chat:"Sohbet",learn:"Türkçe öğren",settings:"Ayarlar",typeMessage:"Mesajını yaz...",send:"Gönder",comingSoon:"Bu özellik sonraki aşamada eklenecek.",lessonTitle:"Kısa Türkçe dersi",lessonHint:"Türkçe kelimeler ve anlamları",language:"Uygulama dili",home:"Ana sayfa",assistantReady:"Yardım için hazır",clear:"Temizle",chatReady:"AERON sohbete hazır.",chatSetup:"Supabase bağlantısı yapılandırılmalı.",emptyChat:"AERON ile sohbete başla veya bir öneri seç:",suggestions:["Zor bir konuyu basitçe açıkla","Bana 5 yeni Türkçe kelime öğret","Günlük işlerimi düzenlememe yardım et","Bana kısa sorular sor"],thinking:"AERON düşünüyor...",listen:"▶ Dinle",stopAudio:"Sesi durdur",retry:"Tekrar dene",quizTitle:"Kendini test et",question:"Soru",score:"Puanın",correct:"Doğru! ",incorrect:"Tam değil. ",next:"Sonraki soru",restartQuiz:"Testi yeniden başlat",resetLearning:"Türkçe ilerlemesini sıfırla",clearSavedChat:"Kayıtlı sohbeti temizle",stopSound:"Sesi durdur",storageNote:"AERON sohbeti ve dili yalnızca bu cihazda saklar. Uygulama verilerini silmek kayıtları silebilir.",resetTitle:"Öğrenmeyi sıfırla",resetMessage:"Test puanını sıfırlayıp ilk soruya dönmek istiyor musun?",cancel:"İptal",reset:"Sıfırla",clearTitle:"Sohbeti temizle",clearMessage:"Bu cihazdaki tüm AERON mesajları silinsin mi?",speechWord:"▶ Türkçe telaffuzu dinle",appInfo:"Uygulama hakkında",appDescription:"AERON çok dilli kişisel bir asistandır.",version:"Sürüm",deviceStorage:"Veriler bu cihazda saklanır."}
 } as const;
