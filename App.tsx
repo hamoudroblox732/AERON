@@ -136,6 +136,17 @@ export default function App() {
     }
   };
 
+  const retryLastMessage = async () => {
+    if (busy || !loaded || messages.length === 0 || messages[messages.length - 1].role !== "user") return;
+    setError("");
+    setBusy(true);
+    try {
+      const reply = await askAeron(messages, language);
+      setMessages((current) => [...current, { id: String(Date.now()), role: "assistant", text: reply }]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "تعذرت إعادة المحاولة. حاول مرة ثانية.");
+    } finally { setBusy(false); }
+  };
   const clearChat = () => {
     Alert.alert("مسح المحادثة", "هل تبي تمسح كل رسائل AERON المحفوظة على هذا الجهاز؟", [
       { text: "إلغاء", style: "cancel" },
@@ -190,7 +201,12 @@ export default function App() {
           </View>
           <ScrollView style={styles.messages} contentContainerStyle={styles.messageList}>
             {!loaded && <ActivityIndicator color={colors.primary} />}
-            {loaded && messages.length === 0 && <Text style={styles.empty}>اكتب سؤالك وابدأ أول محادثة مع aeron.</Text>}
+            {loaded && messages.length === 0 && <View style={styles.emptyWrap}>
+              <Text style={styles.empty}>ابدأ محادثتك مع aeron، أو اختر اقتراحاً:</Text>
+              {["اشرح لي موضوعاً صعباً بطريقة بسيطة", "علمني 5 كلمات تركية جديدة", "ساعدني أرتب مهامي اليوم", "اختبر معلوماتي بأسئلة قصيرة"].map((prompt) => <Pressable key={prompt} style={styles.suggestion} onPress={() => setMessage(prompt)}>
+                <Text style={styles.suggestionText}>{prompt}</Text>
+              </Pressable>)}
+            </View>}
             {messages.map((item) => <View key={item.id} style={[styles.messageBubble, item.role === "assistant" ? styles.assistantBubble : styles.userBubble]}>
               <Text style={styles.messageRole}>{item.role === "assistant" ? "aeron" : "YOU"}</Text>
               <Text style={styles.messageText}>{item.text}</Text>
@@ -198,7 +214,10 @@ export default function App() {
             </View>)}
             {busy && <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={styles.loadingText}>aeron يفكر...</Text></View>}
           </ScrollView>
-          {!!error && <Text style={styles.error}>{error}</Text>}
+          {!!error && <View style={styles.errorWrap}>
+            <Text style={styles.error}>{error}</Text>
+            {messages.length > 0 && messages[messages.length - 1].role === "user" && <Pressable onPress={retryLastMessage} disabled={busy} style={styles.retryButton}><Text style={styles.retryText}>إعادة المحاولة</Text></Pressable>}
+          </View>}
           <View style={styles.composer}>
             <TextInput value={message} onChangeText={setMessage} placeholder={t.typeMessage} placeholderTextColor={colors.muted} style={[styles.input, rtl && styles.rtl]} multiline editable={loaded && !busy} />
             <Pressable onPress={sendMessage} disabled={busy || !loaded || !message.trim()} style={[styles.send, (busy || !loaded || !message.trim()) && styles.sendDisabled]}>
@@ -302,7 +321,13 @@ const styles = StyleSheet.create({
   clearText: { color: colors.danger, fontSize: 12, fontWeight: "700" },
   messages: { flex: 1, marginVertical: 12 },
   messageList: { paddingBottom: 10 },
-  empty: { color: colors.muted, textAlign: "center", marginTop: 40, lineHeight: 22 },
+  empty: { color: colors.muted, textAlign: "center", marginTop: 28, marginBottom: 14, lineHeight: 22 },
+  emptyWrap: { paddingHorizontal: 4 },
+  suggestion: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 11, padding: 12, marginBottom: 8 },
+  suggestionText: { color: colors.primary, fontSize: 12, textAlign: "center" },
+  errorWrap: { marginBottom: 8 },
+  retryButton: { alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 9, paddingHorizontal: 12, paddingVertical: 8, marginTop: 4 },
+  retryText: { color: colors.primary, fontWeight: "700", fontSize: 12 },
   messageBubble: { maxWidth: "88%", borderRadius: 14, padding: 12, marginBottom: 10 },
   assistantBubble: { alignSelf: "flex-start", backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   userBubble: { alignSelf: "flex-end", backgroundColor: colors.primarySoft },
