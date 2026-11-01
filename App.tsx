@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   SafeAreaView, View, Text, StyleSheet, Pressable, TextInput,
   ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Alert
@@ -21,7 +21,12 @@ const quizQuestions = [
   { question: "كيف تقول شكراً بالتركي؟", options: ["Teşekkür ederim", "Lütfen", "Görüşürüz"], answer: 0, explanation: "Teşekkür ederim تعني شكراً لك." },
   { question: "وش معنى Nasılsın؟", options: ["أين أنت؟", "كم عمرك؟", "كيف حالك؟"], answer: 2, explanation: "Nasılsın تعني كيف حالك؟" },
   { question: "وش معنى Lütfen؟", options: ["من فضلك", "صباح الخير", "لا أفهم"], answer: 0, explanation: "Lütfen تعني من فضلك." },
-  { question: "كيف تقول أراك لاحقاً؟", options: ["Merhaba", "Görüşürüz", "Anlamadım"], answer: 1, explanation: "Görüşürüz تعني أراك لاحقاً." }
+  { question: "كيف تقول أراك لاحقاً؟", options: ["Merhaba", "Görüşürüz", "Anlamadım"], answer: 1, explanation: "Görüşürüz تعني أراك لاحقاً." },
+  { question: "وش معنى Evet؟", options: ["لا", "نعم", "ربما"], answer: 1, explanation: "Evet تعني نعم." },
+  { question: "وش معنى Hayır؟", options: ["لا", "نعم", "شكراً"], answer: 0, explanation: "Hayır تعني لا." },
+  { question: "كيف تقول صباح الخير؟", options: ["İyi geceler", "Günaydın", "İyi akşamlar"], answer: 1, explanation: "Günaydın تعني صباح الخير." },
+  { question: "وش معنى Su؟", options: ["ماء", "خبز", "بيت"], answer: 0, explanation: "Su تعني ماء." },
+  { question: "وش معنى Ekmek؟", options: ["قهوة", "ماء", "خبز"], answer: 2, explanation: "Ekmek تعني خبز." }
 ];
 
 
@@ -46,6 +51,7 @@ export default function App() {
   const [quizScore, setQuizScore] = useState(0);
   const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const messagesScrollRef = useRef<ScrollView>(null);
 
   const t = useMemo(() => translations[language], [language]);
   const rtl = language === "ar";
@@ -210,7 +216,12 @@ export default function App() {
             </View>
             <Pressable onPress={clearChat} style={styles.clearButton}><Text style={styles.clearText}>مسح</Text></Pressable>
           </View>
-          <ScrollView style={styles.messages} contentContainerStyle={styles.messageList}>
+          <ScrollView
+            ref={messagesScrollRef}
+            style={styles.messages}
+            contentContainerStyle={styles.messageList}
+            onContentSizeChange={() => messagesScrollRef.current?.scrollToEnd({ animated: true })}
+          >
             {!loaded && <ActivityIndicator color={colors.primary} />}
             {loaded && messages.length === 0 && <View style={styles.emptyWrap}>
               <Text style={styles.empty}>ابدأ محادثتك مع aeron، أو اختر اقتراحاً:</Text>
@@ -297,6 +308,7 @@ export default function App() {
             </Pressable>)}
           </View>
           <Text style={styles.note}>يحفظ aeron المحادثة واللغة على هذا الجهاز فقط. حذف التطبيق أو بياناته قد يحذف المحادثات.</Text>
+          <Pressable style={styles.resetButton} onPress={clearChat}><Text style={styles.resetButtonText}>مسح المحادثة المحفوظة</Text></Pressable>
           <Pressable style={styles.resetButton} onPress={resetLearning}><Text style={styles.resetButtonText}>إعادة ضبط تقدّم تعلم التركية</Text></Pressable>
           <Pressable style={styles.resetButton} onPress={stopSpeech}><Text style={styles.resetButtonText}>إيقاف أي صوت يعمل</Text></Pressable>
         </View>}
