@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "AERON",
+    "slug": "aeron-ai",
+    "version": "1.0.0",
+    "orientation": "default",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hamoudroblox732.aeron",
+      "buildNumber": "1"
+    },
+    "android": {
+      "package": "com.hamoudroblox732.aeron"
+    }
+  }
+}
