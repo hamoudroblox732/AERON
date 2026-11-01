@@ -204,7 +204,7 @@ export default function App() {
           </View>)}
           <View style={styles.quizCard}>
             <Text style={styles.quizTitle}>اختبر نفسك</Text>
-            <Text style={styles.quizProgress}>السؤال {quizIndex + 1} من {quizQuestions.length} · نتيجتك {quizScore{'}'}</Text>
+            <Text style={styles.quizProgress}>السؤال {quizIndex + 1} من {quizQuestions.length} · نتيجتك {quizScore}</Text>
             <Text style={styles.quizQuestion}>{quizQuestions[quizIndex].question}</Text>
             {quizQuestions[quizIndex].options.map((option, index) => {
               const chosen = quizAnswer === index;
