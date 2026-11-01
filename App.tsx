@@ -15,6 +15,7 @@ type Tab = "home" | "chat" | "learn" | "settings";
 type ChatMessage = { id: string; role: "user" | "assistant"; text: string };
 const CHAT_STORAGE_KEY = "aeron.chat.v1";
 const LANGUAGE_STORAGE_KEY = "aeron.language.v1";
+const QUIZ_STORAGE_KEY = "aeron.quiz.v1";
 const quizQuestions = [
   { question: "وش معنى Merhaba؟", options: ["مع السلامة", "مرحباً", "شكراً"], answer: 1, explanation: "Merhaba تعني مرحباً." },
   { question: "كيف تقول شكراً بالتركي؟", options: ["Teşekkür ederim", "Lütfen", "Görüşürüz"], answer: 0, explanation: "Teşekkür ederim تعني شكراً لك." },
@@ -53,9 +54,10 @@ export default function App() {
     let active = true;
     (async () => {
       try {
-        const [savedChat, savedLanguage] = await Promise.all([
+        const [savedChat, savedLanguage, savedQuiz] = await Promise.all([
           AsyncStorage.getItem(CHAT_STORAGE_KEY),
-          AsyncStorage.getItem(LANGUAGE_STORAGE_KEY)
+          AsyncStorage.getItem(LANGUAGE_STORAGE_KEY),
+          AsyncStorage.getItem(QUIZ_STORAGE_KEY)
         ]);
         if (!active) return;
         if (savedChat) {
@@ -68,6 +70,11 @@ export default function App() {
         }
         if (savedLanguage === "ar" || savedLanguage === "en" || savedLanguage === "tr") {
           setLanguage(savedLanguage);
+        }
+        if (savedQuiz) {
+          const quiz = JSON.parse(savedQuiz);
+          if (Number.isInteger(quiz.index) && quiz.index >= 0 && quiz.index < quizQuestions.length) setQuizIndex(quiz.index);
+          if (Number.isInteger(quiz.score) && quiz.score >= 0 && quiz.score <= quizQuestions.length) setQuizScore(quiz.score);
         }
       } catch {
         if (active) setError("تعذر تحميل المحادثة المحفوظة.");
@@ -87,6 +94,12 @@ export default function App() {
   useEffect(() => {
     if (loaded) AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, language).catch(() => {});
   }, [language, loaded]);
+
+  useEffect(() => {
+    if (loaded) AsyncStorage.setItem(QUIZ_STORAGE_KEY, JSON.stringify({ index: quizIndex, score: quizScore })).catch(() => {});
+  }, [quizIndex, quizScore, loaded]);
+
+  useEffect(() => () => { Speech.stop(); }, []);
 
   const speakText = (text: string, id: string, lang: Language = language) => {
     Speech.stop();
