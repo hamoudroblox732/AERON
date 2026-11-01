@@ -11,7 +11,7 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
-    const apiKey = Deno.env.get("OPENAI_API_KEY");
+    const apiKey = Deno.env.get("openai_api_key");
     if (!apiKey) return json({ error: "لم يتم ضبط مفتاح الذكاء الاصطناعي في إعدادات الخادم." }, 503);
 
     const body = await req.json();
