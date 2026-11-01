@@ -21,12 +21,12 @@ const QUIZ_STORAGE_KEY = "aeron.quiz.v1";
 
 
 const words = [
-  { tr: "Merhaba", ar: "مرحباً", en: "Hello" },
-  { tr: "Nasılsın?", ar: "كيف حالك؟", en: "How are you?" },
-  { tr: "Teşekkür ederim", ar: "شكراً لك", en: "Thank you" },
-  { tr: "Görüşürüz", ar: "أراك لاحقاً", en: "See you" },
-  { tr: "Lütfen", ar: "من فضلك", en: "Please" },
-  { tr: "Anlamadım", ar: "لم أفهم", en: "I didn't understand" }
+  { tr: "Merhaba", ar: "مرحباً", en: "Hello", meaningTr: "Selamlaşırken kullanılır." },
+  { tr: "Nasılsın?", ar: "كيف حالك؟", en: "How are you?", meaningTr: "Birinin nasıl olduğunu sorar." },
+  { tr: "Teşekkür ederim", ar: "شكراً لك", en: "Thank you", meaningTr: "Minnettarlık bildirir." },
+  { tr: "Görüşürüz", ar: "أراك لاحقاً", en: "See you", meaningTr: "Vedalaşırken söylenir." },
+  { tr: "Lütfen", ar: "من فضلك", en: "Please", meaningTr: "Rica ederken kullanılır." },
+  { tr: "Anlamadım", ar: "لم أفهم", en: "I didn't understand", meaningTr: "Bir şeyi anlamadığını belirtir." }
 ];
 
 export default function App() {
@@ -75,7 +75,7 @@ export default function App() {
           if (quiz.answer === null || (Number.isInteger(quiz.answer) && quiz.answer >= 0 && quiz.answer <= 2)) setQuizAnswer(quiz.answer);
         }
       } catch {
-        if (active) setError("تعذر تحميل المحادثة المحفوظة.");
+        if (active) setError(translations.ar.loadError);
       } finally {
         if (active) setLoaded(true);
       }
@@ -85,7 +85,7 @@ export default function App() {
 
   useEffect(() => {
     if (loaded) AsyncStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages)).catch(() => {
-      setError("تعذر حفظ المحادثة على الجهاز.");
+      setError(translations[language].saveError);
     });
   }, [messages, loaded]);
 
@@ -128,7 +128,7 @@ export default function App() {
         id: String(Date.now() + 1), role: "assistant", text: reply
       }]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "صار خطأ غير متوقع. حاول مرة ثانية.");
+      setError(e instanceof Error ? e.message : t.genericError);
     } finally {
       setBusy(false);
     }
@@ -157,7 +157,7 @@ export default function App() {
 
   const resetLearning = () => {
     Alert.alert(t.resetTitle, t.resetMessage, [
-      { text: "إلغاء", style: "cancel" },
+      { text: t.cancel, style: "cancel" },
       { text: t.reset, style: "destructive", onPress: () => {
         setQuizIndex(0);
         setQuizScore(0);
@@ -191,11 +191,11 @@ export default function App() {
           <Text style={[styles.sectionTitle, rtl && styles.rtl]}>{t.prompt}</Text>
           <Pressable style={styles.actionCard} onPress={() => setTab("chat")}>
             <Text style={styles.actionTitle}>{t.chat}</Text>
-            <Text style={styles.actionDesc}>ابدأ محادثة مع aeron</Text>
+            <Text style={styles.actionDesc}>{t.homeChatDesc}</Text>
           </Pressable>
           <Pressable style={styles.actionCard} onPress={() => setTab("learn")}>
             <Text style={styles.actionTitle}>{t.learn}</Text>
-            <Text style={styles.actionDesc}>Merhaba · Nasılsın? · Teşekkürler</Text>
+            <Text style={styles.actionDesc}>{t.homeLearnDesc}</Text>
           </Pressable>
         </ScrollView>}
 
@@ -205,7 +205,7 @@ export default function App() {
               <Text style={[styles.title, rtl && styles.rtl]}>{t.chat}</Text>
               <Text style={[styles.subtitle, rtl && styles.rtl]}>{isAeronConfigured() ? t.chatReady : t.chatSetup}</Text>
             </View>
-            <Pressable onPress={clearChat} style={styles.clearButton}><Text style={styles.clearText}>مسح</Text></Pressable>
+            <Pressable onPress={clearChat} style={styles.clearButton}><Text style={styles.clearText}>{t.clear}</Text></Pressable>
           </View>
           <ScrollView
             ref={messagesScrollRef}
@@ -221,7 +221,7 @@ export default function App() {
               </Pressable>)}
             </View>}
             {messages.map((item) => <View key={item.id} style={[styles.messageBubble, item.role === "assistant" ? styles.assistantBubble : styles.userBubble]}>
-              <Text style={styles.messageRole}>{item.role === "assistant" ? "aeron" : "YOU"}</Text>
+              <Text style={styles.messageRole}>{item.role === "assistant" ? "aeron" : t.you}</Text>
               <Text style={styles.messageText}>{item.text}</Text>
               {item.role === "assistant" && <Pressable style={styles.speakButton} onPress={() => speakingId === item.id ? stopSpeech() : speakText(item.text, item.id)}><Text style={styles.speakText}>{speakingId === item.id ? t.stopAudio : t.listen}</Text></Pressable>}
             </View>)}
@@ -229,7 +229,7 @@ export default function App() {
           </ScrollView>
           {!!error && <View style={styles.errorWrap}>
             <Text style={styles.error}>{error}</Text>
-            {messages.length > 0 && messages[messages.length - 1].role === "user" && <Pressable onPress={retryLastMessage} disabled={busy} style={styles.retryButton}><Text style={styles.retryText}>إعادة المحاولة</Text></Pressable>}
+            {messages.length > 0 && messages[messages.length - 1].role === "user" && <Pressable onPress={retryLastMessage} disabled={busy} style={styles.retryButton}><Text style={styles.retryText}>{t.retry}</Text></Pressable>}
           </View>}
           <View style={styles.composer}>
             <TextInput value={message} onChangeText={setMessage} placeholder={t.typeMessage} placeholderTextColor={colors.muted} style={[styles.input, rtl && styles.rtl]} multiline editable={loaded && !busy} />
@@ -244,7 +244,7 @@ export default function App() {
           <Text style={[styles.subtitle, rtl && styles.rtl]}>{t.lessonHint}</Text>
           {words.map((word) => <View key={word.tr} style={styles.wordCard}>
             <Text style={styles.wordTr}>{word.tr}</Text>
-            <Text style={styles.wordMeaning}>{language === "en" ? word.en : language === "tr" ? word.tr : word.ar}</Text>
+            <Text style={styles.wordMeaning}>{language === "en" ? word.en : language === "tr" ? word.meaningTr : word.ar}</Text>
             <Pressable style={styles.speakButton} onPress={() => speakText(word.tr, word.tr, "tr")}><Text style={styles.speakText}>{t.speechWord}</Text></Pressable>
           </View>)}
           <View style={styles.quizCard}>
