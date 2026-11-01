@@ -142,13 +142,13 @@ export default function App() {
       const reply = await askAeron(messages, language);
       setMessages((current) => [...current, { id: String(Date.now()), role: "assistant", text: reply }]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "تعذرت إعادة المحاولة. حاول مرة ثانية.");
+      setError(e instanceof Error ? e.message : "تعذرت {t.retry}. حاول مرة ثانية.");
     } finally { setBusy(false); }
   };
   const clearChat = () => {
-    Alert.alert("مسح المحادثة", "هل تبي تمسح كل رسائل AERON المحفوظة على هذا الجهاز؟", [
-      { text: "إلغاء", style: "cancel" },
-      { text: "مسح", style: "destructive", onPress: () => {
+    Alert.alert(t.clearTitle, t.clearMessage, [
+      { text: t.cancel, style: "cancel" },
+      { text: t.clear, style: "destructive", onPress: () => {
         setMessages([]);
         setError("");
       }}
@@ -156,9 +156,9 @@ export default function App() {
   };
 
   const resetLearning = () => {
-    Alert.alert("إعادة ضبط التعلّم", "هل تبي تصفّر نتيجة الاختبار وترجع للسؤال الأول؟", [
+    Alert.alert(t.resetTitle, t.resetMessage, [
       { text: "إلغاء", style: "cancel" },
-      { text: "إعادة ضبط", style: "destructive", onPress: () => {
+      { text: t.reset, style: "destructive", onPress: () => {
         setQuizIndex(0);
         setQuizScore(0);
         setQuizAnswer(null);
@@ -203,7 +203,7 @@ export default function App() {
           <View style={styles.chatHeading}>
             <View style={styles.headingText}>
               <Text style={[styles.title, rtl && styles.rtl]}>{t.chat}</Text>
-              <Text style={[styles.subtitle, rtl && styles.rtl]}>{isAeronConfigured() ? "aeron جاهز للمحادثة." : "يلزم إعداد متغيرات Supabase في بيئة التطبيق."}</Text>
+              <Text style={[styles.subtitle, rtl && styles.rtl]}>{isAeronConfigured() ? t.chatReady : t.chatSetup}</Text>
             </View>
             <Pressable onPress={clearChat} style={styles.clearButton}><Text style={styles.clearText}>مسح</Text></Pressable>
           </View>
@@ -215,17 +215,17 @@ export default function App() {
           >
             {!loaded && <ActivityIndicator color={colors.primary} />}
             {loaded && messages.length === 0 && <View style={styles.emptyWrap}>
-              <Text style={styles.empty}>ابدأ محادثتك مع aeron، أو اختر اقتراحاً:</Text>
-              {["اشرح لي موضوعاً صعباً بطريقة بسيطة", "علمني 5 كلمات تركية جديدة", "ساعدني أرتب مهامي اليوم", "اختبر معلوماتي بأسئلة قصيرة"].map((prompt) => <Pressable key={prompt} style={styles.suggestion} onPress={() => setMessage(prompt)}>
+              <Text style={styles.empty}>{t.emptyChat}</Text>
+              {t.suggestions.map((prompt) => <Pressable key={prompt} style={styles.suggestion} onPress={() => setMessage(prompt)}>
                 <Text style={styles.suggestionText}>{prompt}</Text>
               </Pressable>)}
             </View>}
             {messages.map((item) => <View key={item.id} style={[styles.messageBubble, item.role === "assistant" ? styles.assistantBubble : styles.userBubble]}>
               <Text style={styles.messageRole}>{item.role === "assistant" ? "aeron" : "YOU"}</Text>
               <Text style={styles.messageText}>{item.text}</Text>
-              {item.role === "assistant" && <Pressable style={styles.speakButton} onPress={() => speakingId === item.id ? stopSpeech() : speakText(item.text, item.id)}><Text style={styles.speakText}>{speakingId === item.id ? "إيقاف الصوت" : "▶ استمع"}</Text></Pressable>}
+              {item.role === "assistant" && <Pressable style={styles.speakButton} onPress={() => speakingId === item.id ? stopSpeech() : speakText(item.text, item.id)}><Text style={styles.speakText}>{speakingId === item.id ? t.stopAudio : t.listen}</Text></Pressable>}
             </View>)}
-            {busy && <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={styles.loadingText}>aeron يفكر...</Text></View>}
+            {busy && <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={styles.loadingText}>{t.thinking}</Text></View>}
           </ScrollView>
           {!!error && <View style={styles.errorWrap}>
             <Text style={styles.error}>{error}</Text>
@@ -244,12 +244,12 @@ export default function App() {
           <Text style={[styles.subtitle, rtl && styles.rtl]}>{t.lessonHint}</Text>
           {words.map((word) => <View key={word.tr} style={styles.wordCard}>
             <Text style={styles.wordTr}>{word.tr}</Text>
-            <Text style={styles.wordMeaning}>{language === "en" ? word.en : word.ar}</Text>
-            <Pressable style={styles.speakButton} onPress={() => speakText(word.tr, word.tr, "tr")}><Text style={styles.speakText}>▶ استمع للنطق التركي</Text></Pressable>
+            <Text style={styles.wordMeaning}>{language === "en" ? word.en : language === "tr" ? word.tr : word.ar}</Text>
+            <Pressable style={styles.speakButton} onPress={() => speakText(word.tr, word.tr, "tr")}><Text style={styles.speakText}>{t.speechWord}</Text></Pressable>
           </View>)}
           <View style={styles.quizCard}>
-            <Text style={styles.quizTitle}>اختبر نفسك</Text>
-            <Text style={styles.quizProgress}>السؤال {quizIndex + 1} من {quizQuestions.length} · نتيجتك {quizScore}</Text>
+            <Text style={styles.quizTitle}>{t.quizTitle}</Text>
+            <Text style={styles.quizProgress}>{t.question} {quizIndex + 1} / {quizQuestions.length} · {t.score}: {quizScore}</Text>
             <Text style={styles.quizQuestion}>{quizQuestions[quizIndex].question}</Text>
             {quizQuestions[quizIndex].options.map((option, index) => {
               const chosen = quizAnswer === index;
@@ -272,7 +272,7 @@ export default function App() {
             })}
             {quizAnswer !== null && <>
               <Text style={styles.quizExplanation}>
-                {quizAnswer === quizQuestions[quizIndex].answer ? "إجابة صحيحة! " : "مو صحيح. "}
+                {quizAnswer === quizQuestions[quizIndex].answer ? t.correct : t.incorrect}
                 {quizQuestions[quizIndex].explanation}
               </Text>
               <Pressable style={styles.quizNext} onPress={() => {
@@ -284,7 +284,7 @@ export default function App() {
                 }
                 setQuizAnswer(null);
               }}>
-                <Text style={styles.quizNextText}>{quizIndex === quizQuestions.length - 1 ? "إعادة الاختبار" : "السؤال التالي"}</Text>
+                <Text style={styles.quizNextText}>{quizIndex === quizQuestions.length - 1 ? t.restartQuiz : t.next}</Text>
               </Pressable>
             </>}
           </View>
@@ -298,10 +298,16 @@ export default function App() {
               <Text style={[styles.languageText, language === item && styles.languageTextSelected]}>{item.toUpperCase()}</Text>
             </Pressable>)}
           </View>
-          <Text style={styles.note}>يحفظ aeron المحادثة واللغة على هذا الجهاز فقط. حذف التطبيق أو بياناته قد يحذف المحادثات.</Text>
-          <Pressable style={styles.resetButton} onPress={clearChat}><Text style={styles.resetButtonText}>مسح المحادثة المحفوظة</Text></Pressable>
-          <Pressable style={styles.resetButton} onPress={resetLearning}><Text style={styles.resetButtonText}>إعادة ضبط تقدّم تعلم التركية</Text></Pressable>
-          <Pressable style={styles.resetButton} onPress={stopSpeech}><Text style={styles.resetButtonText}>إيقاف أي صوت يعمل</Text></Pressable>
+          <Text style={styles.note}>{t.storageNote}</Text>
+          <Pressable style={styles.resetButton} onPress={clearChat}><Text style={styles.resetButtonText}>{t.clearSavedChat}</Text></Pressable>
+          <Pressable style={styles.resetButton} onPress={resetLearning}><Text style={styles.resetButtonText}>{t.resetLearning}</Text></Pressable>
+          <Pressable style={styles.resetButton} onPress={stopSpeech}><Text style={styles.resetButtonText}>{t.stopSound}</Text></Pressable>
+          <View style={styles.aboutCard}>
+            <Text style={styles.aboutTitle}>{t.appInfo}</Text>
+            <Text style={styles.note}>{t.appDescription}</Text>
+            <Text style={styles.note}>{t.version}: 1.0.0</Text>
+            <Text style={styles.note}>{t.deviceStorage}</Text>
+          </View>
         </View>}
       </View>
     </SafeAreaView>
@@ -370,6 +376,8 @@ const styles = StyleSheet.create({
   note: { color: colors.muted, marginTop: 25, lineHeight: 21 },
   resetButton: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 12, padding: 14, marginTop: 12 },
   resetButtonText: { color: colors.primary, fontSize: 12, fontWeight: "700", textAlign: "center" },
+  aboutCard: { backgroundColor: colors.surfaceRaised, borderColor: colors.border, borderWidth: 1, borderRadius: 14, padding: 15, marginTop: 20 },
+  aboutTitle: { color: colors.text, fontSize: 15, fontWeight: "800" },
   quizCard: { backgroundColor: colors.surfaceRaised, borderColor: colors.border, borderWidth: 1, borderRadius: 16, padding: 16, marginTop: 12, marginBottom: 20 },
   quizTitle: { color: colors.text, fontSize: 18, fontWeight: "800", marginBottom: 7 },
   quizProgress: { color: colors.muted, fontSize: 11, marginBottom: 14 },
