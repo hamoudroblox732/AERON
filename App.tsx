@@ -8,6 +8,7 @@ import { StatusBar } from "expo-status-bar";
 import * as Speech from "expo-speech";
 import { Orb } from "./src/components/Orb";
 import { Language, translations } from "./src/i18n";
+import { quizQuestionsByLanguage } from "./src/quiz";
 import { colors, spacing } from "./src/theme";
 import { askAeron, isAeronConfigured } from "./src/ai";
 
@@ -16,18 +17,7 @@ type ChatMessage = { id: string; role: "user" | "assistant"; text: string };
 const CHAT_STORAGE_KEY = "aeron.chat.v1";
 const LANGUAGE_STORAGE_KEY = "aeron.language.v1";
 const QUIZ_STORAGE_KEY = "aeron.quiz.v1";
-const quizQuestions = [
-  { question: "وش معنى Merhaba؟", options: ["مع السلامة", "مرحباً", "شكراً"], answer: 1, explanation: "Merhaba تعني مرحباً." },
-  { question: "كيف تقول شكراً بالتركي؟", options: ["Teşekkür ederim", "Lütfen", "Görüşürüz"], answer: 0, explanation: "Teşekkür ederim تعني شكراً لك." },
-  { question: "وش معنى Nasılsın؟", options: ["أين أنت؟", "كم عمرك؟", "كيف حالك؟"], answer: 2, explanation: "Nasılsın تعني كيف حالك؟" },
-  { question: "وش معنى Lütfen؟", options: ["من فضلك", "صباح الخير", "لا أفهم"], answer: 0, explanation: "Lütfen تعني من فضلك." },
-  { question: "كيف تقول أراك لاحقاً؟", options: ["Merhaba", "Görüşürüz", "Anlamadım"], answer: 1, explanation: "Görüşürüz تعني أراك لاحقاً." },
-  { question: "وش معنى Evet؟", options: ["لا", "نعم", "ربما"], answer: 1, explanation: "Evet تعني نعم." },
-  { question: "وش معنى Hayır؟", options: ["لا", "نعم", "شكراً"], answer: 0, explanation: "Hayır تعني لا." },
-  { question: "كيف تقول صباح الخير؟", options: ["İyi geceler", "Günaydın", "İyi akşamlar"], answer: 1, explanation: "Günaydın تعني صباح الخير." },
-  { question: "وش معنى Su؟", options: ["ماء", "خبز", "بيت"], answer: 0, explanation: "Su تعني ماء." },
-  { question: "وش معنى Ekmek؟", options: ["قهوة", "ماء", "خبز"], answer: 2, explanation: "Ekmek تعني خبز." }
-];
+
 
 
 const words = [
@@ -55,6 +45,7 @@ export default function App() {
 
   const t = useMemo(() => translations[language], [language]);
   const rtl = language === "ar";
+  const quizQuestions = quizQuestionsByLanguage[language];
 
   useEffect(() => {
     let active = true;
