@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   SafeAreaView, View, Text, StyleSheet, Pressable, TextInput,
-  ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform
+  ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Alert
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import { Orb } from "./src/components/Orb";
 import { Language, translations } from "./src/i18n";
@@ -11,6 +12,8 @@ import { askAeron, isAeronConfigured } from "./src/ai";
 
 type Tab = "home" | "chat" | "learn" | "settings";
 type ChatMessage = { id: string; role: "user" | "assistant"; text: string };
+const CHAT_STORAGE_KEY = "aeron.chat.v1";
+const LANGUAGE_STORAGE_KEY = "aeron.language.v1";
 
 const words = [
   { tr: "Merhaba", ar: "مرحباً", en: "Hello" },
@@ -28,12 +31,52 @@ export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [loaded, setLoaded] = useState(false);
   const t = useMemo(() => translations[language], [language]);
   const rtl = language === "ar";
 
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const [savedChat, savedLanguage] = await Promise.all([
+          AsyncStorage.getItem(CHAT_STORAGE_KEY),
+          AsyncStorage.getItem(LANGUAGE_STORAGE_KEY)
+        ]);
+        if (!active) return;
+        if (savedChat) {
+          const parsed = JSON.parse(savedChat);
+          if (Array.isArray(parsed)) setMessages(parsed.filter((item) =>
+            item && typeof item.id === "string" &&
+            (item.role === "user" || item.role === "assistant") &&
+            typeof item.text === "string"
+          ));
+        }
+        if (savedLanguage === "ar" || savedLanguage === "en" || savedLanguage === "tr") {
+          setLanguage(savedLanguage);
+        }
+      } catch {
+        if (active) setError("تعذر تحميل المحادثة المحفوظة.");
+      } finally {
+        if (active) setLoaded(true);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (loaded) AsyncStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages)).catch(() => {
+      setError("تعذر حفظ المحادثة على الجهاز.");
+    });
+  }, [messages, loaded]);
+
+  useEffect(() => {
+    if (loaded) AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, language).catch(() => {});
+  }, [language, loaded]);
+
   const sendMessage = async () => {
     const clean = message.trim();
-    if (!clean || busy) return;
+    if (!clean || busy || !loaded) return;
     const userMessage: ChatMessage = { id: String(Date.now()), role: "user", text: clean };
     const next = [...messages, userMessage];
     setMessages(next);
@@ -52,6 +95,16 @@ export default function App() {
     }
   };
 
+  const clearChat = () => {
+    Alert.alert("مسح المحادثة", "هل تبي تمسح كل رسائل AERON المحفوظة على هذا الجهاز؟", [
+      { text: "إلغاء", style: "cancel" },
+      { text: "مسح", style: "destructive", onPress: () => {
+        setMessages([]);
+        setError("");
+      }}
+    ]);
+  };
+
   const tabs: { id: Tab; label: string }[] = [
     { id: "home", label: t.home }, { id: "chat", label: t.chat },
     { id: "learn", label: t.learn }, { id: "settings", label: t.settings }
@@ -62,7 +115,7 @@ export default function App() {
       <StatusBar style="light" />
       <View style={styles.container}>
         <View style={styles.header}>
-          <View><Text style={styles.brand}>AERON</Text><Text style={styles.eyebrow}>PERSONAL AI</Text></View>
+          <View><Text style={styles.brand}>aeron</Text><Text style={styles.eyebrow}>PERSONAL AI</Text></View>
           <View style={styles.status}><View style={styles.dot} /><Text style={styles.statusText}>{t.assistantReady}</Text></View>
         </View>
         <View style={styles.nav}>
@@ -78,7 +131,7 @@ export default function App() {
           <Text style={[styles.sectionTitle, rtl && styles.rtl]}>{t.prompt}</Text>
           <Pressable style={styles.actionCard} onPress={() => setTab("chat")}>
             <Text style={styles.actionTitle}>{t.chat}</Text>
-            <Text style={styles.actionDesc}>{isAeronConfigured() ? "ابدأ محادثة مع AERON" : "المحادثة الذكية تحتاج إعداد الخادم أولاً"}</Text>
+            <Text style={styles.actionDesc}>ابدأ محادثة مع aeron</Text>
           </Pressable>
           <Pressable style={styles.actionCard} onPress={() => setTab("learn")}>
             <Text style={styles.actionTitle}>{t.learn}</Text>
@@ -87,20 +140,26 @@ export default function App() {
         </ScrollView>}
 
         {tab === "chat" && <KeyboardAvoidingView style={styles.panel} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <Text style={[styles.title, rtl && styles.rtl]}>{t.chat}</Text>
-          <Text style={[styles.subtitle, rtl && styles.rtl]}>{isAeronConfigured() ? "AERON جاهز للمحادثة." : "اربط Supabase وخدمة الذكاء الاصطناعي لتفعيل الردود."}</Text>
+          <View style={styles.chatHeading}>
+            <View style={styles.headingText}>
+              <Text style={[styles.title, rtl && styles.rtl]}>{t.chat}</Text>
+              <Text style={[styles.subtitle, rtl && styles.rtl]}>{isAeronConfigured() ? "aeron جاهز للمحادثة." : "يلزم إعداد متغيرات Supabase في بيئة التطبيق."}</Text>
+            </View>
+            <Pressable onPress={clearChat} style={styles.clearButton}><Text style={styles.clearText}>مسح</Text></Pressable>
+          </View>
           <ScrollView style={styles.messages} contentContainerStyle={styles.messageList}>
-            {messages.length === 0 && <Text style={styles.empty}>اكتب سؤالك وابدأ أول محادثة مع AERON.</Text>}
+            {!loaded && <ActivityIndicator color={colors.primary} />}
+            {loaded && messages.length === 0 && <Text style={styles.empty}>اكتب سؤالك وابدأ أول محادثة مع aeron.</Text>}
             {messages.map((item) => <View key={item.id} style={[styles.messageBubble, item.role === "assistant" ? styles.assistantBubble : styles.userBubble]}>
-              <Text style={styles.messageRole}>{item.role === "assistant" ? "AERON" : "YOU"}</Text>
+              <Text style={styles.messageRole}>{item.role === "assistant" ? "aeron" : "YOU"}</Text>
               <Text style={styles.messageText}>{item.text}</Text>
             </View>)}
-            {busy && <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={styles.loadingText}>AERON يفكر...</Text></View>}
+            {busy && <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={styles.loadingText}>aeron يفكر...</Text></View>}
           </ScrollView>
           {!!error && <Text style={styles.error}>{error}</Text>}
           <View style={styles.composer}>
-            <TextInput value={message} onChangeText={setMessage} placeholder={t.typeMessage} placeholderTextColor={colors.muted} style={[styles.input, rtl && styles.rtl]} multiline />
-            <Pressable onPress={sendMessage} disabled={busy || !message.trim()} style={[styles.send, (busy || !message.trim()) && styles.sendDisabled]}>
+            <TextInput value={message} onChangeText={setMessage} placeholder={t.typeMessage} placeholderTextColor={colors.muted} style={[styles.input, rtl && styles.rtl]} multiline editable={loaded && !busy} />
+            <Pressable onPress={sendMessage} disabled={busy || !loaded || !message.trim()} style={[styles.send, (busy || !loaded || !message.trim()) && styles.sendDisabled]}>
               <Text style={styles.sendText}>{busy ? "..." : t.send}</Text>
             </Pressable>
           </View>
@@ -123,7 +182,7 @@ export default function App() {
               <Text style={[styles.languageText, language === item && styles.languageTextSelected]}>{item.toUpperCase()}</Text>
             </Pressable>)}
           </View>
-          <Text style={styles.note}>المحادثات حالياً غير محفوظة بعد إغلاق التطبيق. سنضيف الذاكرة والحفظ لاحقاً.</Text>
+          <Text style={styles.note}>يحفظ aeron المحادثة واللغة على هذا الجهاز فقط. حذف التطبيق أو بياناته قد يحذف المحادثات.</Text>
         </View>}
       </View>
     </SafeAreaView>
@@ -153,6 +212,10 @@ const styles = StyleSheet.create({
   actionTitle: { color: colors.text, fontSize: 15, fontWeight: "700", marginBottom: 5 },
   actionDesc: { color: colors.muted, fontSize: 12, lineHeight: 18 },
   panel: { flex: 1, paddingTop: 26, paddingBottom: 18 },
+  chatHeading: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 10 },
+  headingText: { flex: 1 },
+  clearButton: { backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 10 },
+  clearText: { color: colors.danger, fontSize: 12, fontWeight: "700" },
   messages: { flex: 1, marginVertical: 12 },
   messageList: { paddingBottom: 10 },
   empty: { color: colors.muted, textAlign: "center", marginTop: 40, lineHeight: 22 },
