@@ -1,44 +1,51 @@
-# AERON AI
+# AERON
 
-AERON is a multilingual personal assistant app for iOS and iPadOS.
+AERON is a multilingual personal assistant app for iOS and iPadOS, built with React Native and TypeScript.
 
-## Current foundation
-- Expo + React Native + TypeScript
+## Features
 - Arabic, English, and Turkish interface
-- Chat UI connected to a Supabase Edge Function client
-- Server-side OpenAI Responses API integration
-- Turkish vocabulary starter screen
-- EAS build profiles for iOS/iPadOS
+- AI chat through a Supabase Edge Function and OpenAI Responses API
+- Local chat and language preferences
+- Turkish vocabulary with translated meanings and speech playback
+- Turkish quiz with 10 questions, saved progress, scoring, and reset
+- Suggested prompts, retry after a failed response, and chat controls
+- Dark interface with tablet layout support
 
-## Connect the AI backend
+## Backend configuration
 
-1. Create a Supabase project (or choose a project dedicated to AERON).
-2. In Supabase project settings, copy the Project URL and anon/public key.
-3. In the Supabase SQL/Edge Functions settings, deploy `supabase/functions/aeron-chat/index.ts` as a function named `aeron-chat`.
-4. Add the provider key as a server secret named `OPENAI_API_KEY`. Never put this secret in this repository or in the app.
-5. Set these public app environment variables in your build environment:
-   - `EXPO_PUBLIC_SUPABASE_URL`
-   - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-6. Rebuild the app after setting the variables.
+The mobile app calls the Supabase Edge Function:
 
-For local Expo testing, place the two public Supabase values in a local `.env` file. Do not commit that file.
+`https://cezeunjaurhfdevuaidp.supabase.co/functions/v1/aeron-chat`
 
-## Important security notes
-- The OpenAI key is read only by the Edge Function.
-- The mobile app contains only the Supabase anon/public key; configure rate limits and abuse protection before public release.
-- Do not store private API keys, service-role keys, passwords, or signing credentials in GitHub.
+The app uses the Supabase anon/public key. This key is intended for client use; access must be protected with appropriate Supabase policies and backend controls.
 
-## Run
+The Edge Function reads the OpenAI key from the server-side secret named exactly:
+
+`openai_api_key`
+
+Never put the OpenAI API key or a Supabase service-role key in this repository or in the mobile app.
+
+To deploy or update the function, use the source at:
+
+`supabase/functions/aeron-chat/index.ts`
+
+## Local development
+
 ```bash
 npm install
+npm run typecheck
 npx expo start
-``
+```
 
-## Build iOS
-Configure EAS and Apple signing credentials, then:
-```bash
-npx eas-cli build --platform ios --profile preview
-``
+There is no committed lockfile currently, so `npm install` resolves dependency versions from the ranges in `package.json`.
 
-## Not implemented yet
-Voice input/output, persistent chat memory, web search, image understanding, and iOS Shortcuts integrations are next stages. iOS limits background listening and unrestricted device control.
+## Data and privacy notes
+- Chat history, selected language, and quiz progress are stored locally on the device using AsyncStorage.
+- Clearing app data or uninstalling the app may remove this local information.
+- AI chat requests are sent to the configured Supabase Edge Function, which forwards the conversation to the OpenAI API.
+- Do not send passwords, API keys, or other sensitive information in chat.
+
+## Current limitations
+- This repository update has not been verified by a full device build or live AI request.
+- Speech availability and voice quality depend on the device's installed speech voices.
+- The app does not provide unrestricted control of iOS or background listening.
