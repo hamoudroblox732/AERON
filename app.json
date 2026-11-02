@@ -9,7 +9,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hamoudroblox732.aeron",
-      "buildNumber": "1"
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.hamoudroblox732.aeron"
