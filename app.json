@@ -13,6 +13,11 @@
     },
     "android": {
       "package": "com.hamoudroblox732.aeron"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e43d93fb-55fd-4274-b990-43206c5317ef"
+      }
     }
   }
 }
