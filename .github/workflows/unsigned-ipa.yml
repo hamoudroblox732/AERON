@@ -32,7 +32,7 @@ jobs:
       - name: Build unsigned iOS app
         run: |
           set -euo pipefail
-          xcodebuild             -workspace ios/AERON.xcworkspace             -scheme AERON             -configuration Release             -sdk iphoneos             -destination 'generic/platform=iOS'             -derivedDataPath build/DerivedData             CODE_SIGNING_ALLOWED=NO             CODE_SIGNING_REQUIRED=NO             CODE_SIGN_IDENTITY=             build
+          xcodebuild -workspace ios/AERON.xcworkspace -scheme AERON -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= build
 
       - name: Package unsigned IPA
         run: |
