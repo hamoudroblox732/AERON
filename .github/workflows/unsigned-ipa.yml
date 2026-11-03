@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-unsigned-ipa:
@@ -32,16 +32,16 @@ jobs:
       - name: Build unsigned iOS app
         run: |
           set -o pipefail
-          xcodebuild \
-            -workspace ios/AERON.xcworkspace \
-            -scheme AERON \
-            -configuration Release \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath build/DerivedData \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY='' \
+          xcodebuild \\
+            -workspace ios/AERON.xcworkspace \\
+            -scheme AERON \\
+            -configuration Release \\
+            -sdk iphoneos \\
+            -destination 'generic/platform=iOS' \\
+            -derivedDataPath build/DerivedData \\
+            CODE_SIGNING_ALLOWED=NO \\
+            CODE_SIGNING_REQUIRED=NO \\
+            CODE_SIGN_IDENTITY='' \\
             build
 
       - name: Package unsigned IPA
@@ -54,10 +54,19 @@ jobs:
           cd build/ipa
           zip -r ../../AERON-unsigned.ipa Payload
 
-      - name: Upload unsigned IPA
+      - name: Upload unsigned IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: AERON-unsigned-IPA
           path: AERON-unsigned.ipa
           if-no-files-found: error
           retention-days: 7
+
+      - name: Publish direct IPA download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: unsigned-build-${{ github.run_number }}
+          name: AERON unsigned IPA build #${{ github.run_number }}
+          files: AERON-unsigned.ipa
+          fail_on_unmatched_files: true
+          generate_release_notes: false
