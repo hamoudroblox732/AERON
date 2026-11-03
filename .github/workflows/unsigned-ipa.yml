@@ -31,22 +31,12 @@ jobs:
 
       - name: Build unsigned iOS app
         run: |
-          set -o pipefail
-          xcodebuild \\
-            -workspace ios/AERON.xcworkspace \\
-            -scheme AERON \\
-            -configuration Release \\
-            -sdk iphoneos \\
-            -destination 'generic/platform=iOS' \\
-            -derivedDataPath build/DerivedData \\
-            CODE_SIGNING_ALLOWED=NO \\
-            CODE_SIGNING_REQUIRED=NO \\
-            CODE_SIGN_IDENTITY='' \\
-            build
+          set -euo pipefail
+          xcodebuild             -workspace ios/AERON.xcworkspace             -scheme AERON             -configuration Release             -sdk iphoneos             -destination 'generic/platform=iOS'             -derivedDataPath build/DerivedData             CODE_SIGNING_ALLOWED=NO             CODE_SIGNING_REQUIRED=NO             CODE_SIGN_IDENTITY=             build
 
       - name: Package unsigned IPA
         run: |
-          set -e
+          set -euo pipefail
           APP_PATH="build/DerivedData/Build/Products/Release-iphoneos/AERON.app"
           test -d "$APP_PATH"
           mkdir -p build/ipa/Payload
