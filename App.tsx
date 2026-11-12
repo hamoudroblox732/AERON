@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   SafeAreaView, View, Text, StyleSheet, Pressable, TextInput,
-  ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Alert
+  ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Alert, Share
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
@@ -113,6 +113,14 @@ export default function App() {
 
   const stopSpeech = () => { Speech.stop(); setSpeakingId(null); };
 
+  const shareMessage = async (text: string) => {
+    try {
+      await Share.share({ message: text });
+    } catch {
+      setError(language === "ar" ? "تعذرت مشاركة الرسالة. حاول مرة ثانية." : "Could not share this message. Try again.");
+    }
+  };
+
   const sendMessage = async () => {
     const clean = message.trim();
     if (!clean || busy || !loaded) return;
@@ -223,6 +231,9 @@ export default function App() {
             {messages.map((item) => <View key={item.id} style={[styles.messageBubble, item.role === "assistant" ? styles.assistantBubble : styles.userBubble]}>
               <Text style={styles.messageRole}>{item.role === "assistant" ? "aeron" : t.you}</Text>
               <Text style={styles.messageText}>{item.text}</Text>
+              <Pressable style={styles.speakButton} onPress={() => shareMessage(item.text)}>
+                <Text style={styles.speakText}>{language === "ar" ? "مشاركة الرسالة" : language === "tr" ? "Mesajı paylaş" : "Share message"}</Text>
+              </Pressable>
               {item.role === "assistant" && <Pressable style={styles.speakButton} onPress={() => speakingId === item.id ? stopSpeech() : speakText(item.text, item.id)}><Text style={styles.speakText}>{speakingId === item.id ? t.stopAudio : t.listen}</Text></Pressable>}
             </View>)}
             {busy && <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={styles.loadingText}>{t.thinking}</Text></View>}
